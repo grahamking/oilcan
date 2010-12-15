@@ -2,8 +2,9 @@
 **oilcan** is a Python job manager for Gearman. It is intended as an alternative for Celery, when your queuing system of choice is Gearman, and you want something simple.
 
 Concept:
+
  1. You use a decorator to mark which python functions can be called as a task.
- 2. You start oilcan, pointing it at a file cointaining tasks. It forks sub-processes.
+ 2. You start oilcan, pointing it at a file cointaining tasks. It forks worker sub-processes.
  3. You send a message to Gearman to trigger one of the jobs.
 
 **oilcan** is alpha software, not quite ready yet.
@@ -36,7 +37,7 @@ To call that task:
 
 Get the dependencies:
 
-   sudo apt-get install gearman-job-server python-gearman.libgearman
+    sudo apt-get install gearman-job-server python-gearman.libgearman
 
 Copy oilcan.py onto your python path:
 

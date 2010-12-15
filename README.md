@@ -49,9 +49,9 @@ Link it from /usr/local/bin/:
 
 Copy the startup script into /etc/init/. It is an upstart script.
 
-    sudo cp upstart.conf /etc/init/
+    sudo cp oilcan.conf /etc/init/
 
-Edit /etc/init/upstart.conf and make it work for you. For help on this run:
+Edit /etc/init/oilcan.conf and make it work for you. For help on this run:
 
     /usr/local/bin/oilcan --help
 

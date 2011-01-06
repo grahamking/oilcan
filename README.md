@@ -35,19 +35,27 @@ To call that task:
 
 ## Install ##
 
-Get the dependencies:
+Get the dependencies (Ubuntu / Debian):
 
     sudo apt-get install gearman-job-server python-gearman.libgearman
 
+If you're running Python 2.6 or earlier you need the argparse package. It's in the standard library for 2.7+:
+
+    sudo pip install argparse
+
+Get oilcan (cd into a temporary directory first):
+
+    git clone git://github.com/grahamking/oilcan.git
+    
 Copy oilcan.py onto your python path:
 
-    sudo cp oilcan.py /usr/local/lib/python2.6/dist-packages/
+    sudo cp oilcan.py /usr/local/lib/python2.6/site-packages/
     
 Link it from /usr/local/bin/:
 
-    sudo ln -s /usr/local/lib/python2.6/dist-packages/ /usr/local/bin/oilcan
+    sudo ln -s /usr/local/lib/python2.6/site-packages/oilcan.py /usr/local/bin/oilcan
 
-Copy the startup script into /etc/init/. It is an upstart script.
+Copy the [upstart](http://upstart.ubuntu.com/) startup script into /etc/init/:
 
     sudo cp oilcan.conf /etc/init/
 
@@ -58,6 +66,16 @@ Edit /etc/init/oilcan.conf and make it work for you. For help on this run:
 Start the worker (Gearman must already be running):
 
     sudo start oilcan
+
+## Misc ##
+
+If you are using MySQL InnoDB, you might get this error:
+
+    OperationalError: (1598, "Binary logging not possible. Message: Transaction level 'READ-COMMITTED' in InnoDB is not safe for binlog mode 'STATEMENT'")
+
+Because oilcan runs for a long time, it changes MySQL's transaction isolation mode to READ-COMMITTED, so that it sees changes. InnoDB's binary log needs to be in ROW mode to support this. In `/etc/mysql/my.cnf` add or edit this row:
+
+    binlog-format = ROW
 
 MORE DOCS TO COME.
 

@@ -35,37 +35,54 @@ To call that task:
 
 ## Install ##
 
-Get the dependencies (Ubuntu / Debian):
+1. Get the dependencies 
 
-    sudo apt-get install gearman-job-server python-gearman.libgearman
+    **Ubuntu 10.10 (Maverick) and later**
 
-If you're running Python 2.6 or earlier you need the argparse package. It's in the standard library for 2.7+:
+        sudo apt-get install gearman-job-server python-gearman.libgearman
 
-    sudo pip install argparse
+    **Other Linuxes**
 
-Get oilcan (cd into a temporary directory first):
+    The `python-gearman.libgearman` package isn't in earlier version of Ubuntu, and the PyPI version relies on a recent Gearman, so install both:
 
-    git clone git://github.com/grahamking/oilcan.git
+        wget http://launchpad.net/gearmand/trunk/0.14/+download/gearmand-0.14.tar.gz
+        tar xvzf gearmand-0.14.tar.gz
+        cd gearmand-0.14
+        ./configure --disable-libmemcached
+        make
+        sudo make install
+
+        sudo pip install python-libgearman
+
+    You might not need to disable libmemcached, but I got three of this type of error if I didn't: _gearmand-0.14/gearmand/gearmand.c:193: undefined reference to `gearman_server_queue_libmemcached_conf'_.
+
+2. If you're running Python 2.6 or earlier you need the argparse package. It's in the standard library for 2.7+:
+
+        sudo pip install argparse
+
+3. Get oilcan (cd into a temporary directory first):
+
+        git clone git://github.com/grahamking/oilcan.git
     
-Copy oilcan.py onto your python path:
+4. Copy oilcan.py onto your python path:
 
-    sudo cp oilcan.py /usr/local/lib/python2.6/site-packages/
+        sudo cp oilcan.py /usr/local/lib/python2.6/site-packages/
     
-Link it from /usr/local/bin/:
+5. Link it from /usr/local/bin/:
 
-    sudo ln -s /usr/local/lib/python2.6/site-packages/oilcan.py /usr/local/bin/oilcan
+        sudo ln -s /usr/local/lib/python2.6/site-packages/oilcan.py /usr/local/bin/oilcan
 
-Copy the [upstart](http://upstart.ubuntu.com/) startup script into /etc/init/:
+6. Copy the [upstart](http://upstart.ubuntu.com/) startup script into /etc/init/:
 
-    sudo cp oilcan.conf /etc/init/
+        sudo cp oilcan.conf /etc/init/
 
-Edit /etc/init/oilcan.conf and make it work for you. For help on this run:
+7. Edit /etc/init/oilcan.conf and make it work for you. For help on this run:
 
-    /usr/local/bin/oilcan --help
+        /usr/local/bin/oilcan --help
 
-Start the worker (Gearman must already be running):
+8. Start the worker (Gearman must already be running):
 
-    sudo start oilcan
+        sudo start oilcan
 
 ## Misc ##
 

@@ -21,11 +21,11 @@
 import sys
 import logging
 import argparse
-import signal
 from multiprocessing import Process
 
-from gearman.libgearman import Worker, GEARMAN_SUCCESS
+from gearman.libgearman import Worker, GEARMAN_SUCCESS, GEARMAN_TIMEOUT
 
+TIMEOUT = 5000     # milli-seconds
 LOGGER = logging.getLogger('oilcan')
 
 
@@ -58,6 +58,11 @@ class OilcanWorker(Process):
         for host in self.servers:
             self.worker.add_server(host)
 
+        # self.worker.work() below blocks in libgearman.so,
+        # so it's important that it times out occasionally
+        # and gives back control.
+        self.worker.set_timeout(TIMEOUT)
+
         __import__(self.task_module)
         tasks = sys.modules[self.task_module]
         LOGGER.debug('Oilcan: Imported: %s', tasks)
@@ -77,12 +82,9 @@ class OilcanWorker(Process):
                     self.task_module)
             return
 
-        # How we stop the workers
-        self.worker.add_function('_oilcan_stop', self.stop)
-
-        while self.is_running:
+        while self.is_running:              # is_running is always True
             result = self.worker.work()
-            if result != GEARMAN_SUCCESS:
+            if result not in [GEARMAN_SUCCESS, GEARMAN_TIMEOUT]:
                 LOGGER.warn('Oilcan: Gearman task result code: %d', result)
 
     def run_task(self, job):
@@ -102,12 +104,6 @@ class OilcanWorker(Process):
         # Gearman tasks must return a string result
         return "OK" if not ret else str(ret)
 
-    def stop(self, job):        # pylint: disable-msg=W0613
-        """Stop this worker"""
-        LOGGER.debug('Oilcan: Worker graceful exit')
-        self.is_running = False
-        return "OK"
-
 
 class OilcanManager(object):
     """Starts and stops the worker sub-processes"""
@@ -121,19 +117,6 @@ class OilcanManager(object):
         self.task_module = None
         self.num_processes = None
         self.is_fork = True
-
-    def stop(self, sig, frame):   # pylint: disable-msg=W0613
-        """Called on Ctrl-C or kill. Asks all sub-processes to stop.
-        We can't just terminate() them, because they are 
-        halted in libgearman.so
-        """
-        from gearman.libgearman import Client
-        client = Client()
-        for host in self.servers:
-            client.add_server(host)
-
-        for _ in range(self.num_processes):
-            client.do_background('_oilcan_stop', '')
 
     def start_workers(self):
         """Creates OilcanWorker sub-processes.
@@ -168,11 +151,6 @@ class OilcanManager(object):
             proc = OilcanWorker(self.task_module, self.servers)
             proc.start()
             process_list.append(proc)
-
-        # Wait for SIGINT (Ctrl-C) or SIGTERM (kill), then cleanup
-        signal.signal(signal.SIGINT, self.stop)
-        signal.signal(signal.SIGTERM, self.stop)
-        signal.pause()
 
         LOGGER.info('Oilcan: Exit')
 
@@ -209,7 +187,7 @@ class OilcanManager(object):
 
         parser.add_argument('--no-fork', action='store_false', dest='is_fork', 
                 default=True,
-                help='No subprocesses. Useful for debugging. Hard to kill.')
+                help='No subprocesses. Useful for debugging.')
 
         parser.add_argument('--debug', action='store_true', default=False,
                 help='Output debug info to console')

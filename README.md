@@ -26,12 +26,14 @@ To call that task:
     # Setup
     from gearman.libgearman import Client
     client = Client()
-    for host in ["127.0.0.1", "192.168.0.100"]:
-        client.add_server(host)
+    for host, port in [("127.0.0.1", 4730), ("192.168.0.100", 4730)]:
+        client.add_server(host, port)
 
     # Call
     # Workload ('42') must be a string. 
     client.do_background('example_task', '42')
+
+If `do` or `do_background` return a response code, it's an index into a gearman_return_t enum. To find out what it means, count into this list, starting from 0: http://gearman.org/docs/api/group__gearman__constants.html#g200f3d324fd4c4bfee16143c8f7b672a
 
 ## Install ##
 

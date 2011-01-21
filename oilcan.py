@@ -158,6 +158,7 @@ class OilcanManager(object):
                 proc.run()
             except Exception:   # pylint: disable-msg=W0703
                 LOGGER.exception('Exception running non-forked oilcan')
+            LOGGER.debug('no-fork client finished')
             return
 
         # Normal mode - Start sub-processes

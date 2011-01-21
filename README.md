@@ -43,18 +43,23 @@ To call that task:
 
     **Other Linuxes**
 
+    Make sure you have the dependencies: 
+    
+        sudo apt-get install libevent-dev uuid-dev
+
     The `python-gearman.libgearman` package isn't in earlier version of Ubuntu, and the PyPI version relies on a recent Gearman, so install both:
 
         wget http://launchpad.net/gearmand/trunk/0.14/+download/gearmand-0.14.tar.gz
         tar xvzf gearmand-0.14.tar.gz
         cd gearmand-0.14
         ./configure --disable-libmemcached
-        make
         sudo make install
 
         sudo pip install python-libgearman
 
     You might not need to disable libmemcached, but I got three of this type of error if I didn't: _gearmand-0.14/gearmand/gearmand.c:193: undefined reference to `gearman_server_queue_libmemcached_conf'_.
+
+    You might also need to: `sudo apt-get install libgearman2 ; sudo ldconfig`, but don't ask me why.
 
 2. If you're running Python 2.6 or earlier you need the argparse package. It's in the standard library for 2.7+:
 
@@ -76,7 +81,11 @@ To call that task:
 
         sudo cp oilcan.conf /etc/init/
 
-7. Edit /etc/init/oilcan.conf and make it work for you. For help on this run:
+7. Edit /etc/init/oilcan.conf and make it work for you. 
+
+        vim /etc/init/oilcan.conf   # Or your editor of choice
+
+    For help on this run:
 
         /usr/local/bin/oilcan --help
 
@@ -84,7 +93,18 @@ To call that task:
 
         sudo start oilcan
 
-## Misc ##
+## Debug ##
+
+If there is an error in your tasks.py oilcan will die as soon as it starts. To see what's going on, run oilcan in non-forked debug mode:
+
+    export DJANGO_SETTINGS_MODULE=settings  # Only needed if using Django
+    /usr/local/bin/oilcan myapp.tasks --add-path /usr/local/myproj/ --no-fork --debug
+
+## Using supervisord, or any other process manager ##
+
+If you prefer something other than _upstart_, simply copy the command from `/etc/init/oilcan.conf`. Oilcan doesn't daemonize itself, so it should play nicely with any process manager you care to use.
+
+## MySQL binlog error ##
 
 If you are using MySQL InnoDB, you might get this error:
 
@@ -93,6 +113,4 @@ If you are using MySQL InnoDB, you might get this error:
 Because oilcan runs for a long time, it changes MySQL's transaction isolation mode to READ-COMMITTED, so that it sees changes. InnoDB's binary log needs to be in ROW mode to support this. In `/etc/mysql/my.cnf` add or edit this row:
 
     binlog-format = ROW
-
-MORE DOCS TO COME.
 

@@ -153,8 +153,11 @@ class OilcanManager(object):
         if not self.is_fork:
             # Debug mode - just run it
             LOGGER.debug('Oilcan: Running in non-forked mode')
-            proc = OilcanWorker(self.task_module, self.servers)
-            proc.run()
+            try:
+                proc = OilcanWorker(self.task_module, self.servers)
+                proc.run()
+            except Exception:   # pylint: disable-msg=W0703
+                LOGGER.exception('Exception running non-forked oilcan')
             return
 
         # Normal mode - Start sub-processes

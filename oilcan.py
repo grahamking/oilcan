@@ -58,13 +58,25 @@ class OilcanWorker(Process):
         for host in self.servers:
             self.worker.add_server(host)
 
-        # self.worker.work() below blocks in libgearman.so,
-        # so it's important that it times out occasionally
-        # and gives back control.
+        self.register_tasks(self.task_module)
+
+        # self.worker.work() blocks in libgearman.so,
+        # so make it time out occasionally and give back control.
         self.worker.set_timeout(TIMEOUT)
 
-        __import__(self.task_module)
-        tasks = sys.modules[self.task_module]
+        while self.is_running:              # is_running is always True
+            result = self.worker.work()
+            if result not in [GEARMAN_SUCCESS, GEARMAN_TIMEOUT]:
+                LOGGER.warn('Oilcan: Gearman task result code: %d', result)
+
+    def register_tasks(self, task_module):
+        """Inspect task_module and records the tasks it finds.
+        Tasks are a function with an is_oilcan_task attribute.
+        Usually this attribute is set via the @tasks decorator.
+        """
+
+        system_import(task_module)
+        tasks = sys.modules[task_module]
         LOGGER.debug('Oilcan: Imported: %s', tasks)
 
         for name in dir(tasks):
@@ -82,11 +94,6 @@ class OilcanWorker(Process):
                     self.task_module)
             return
 
-        while self.is_running:              # is_running is always True
-            result = self.worker.work()
-            if result not in [GEARMAN_SUCCESS, GEARMAN_TIMEOUT]:
-                LOGGER.warn('Oilcan: Gearman task result code: %d', result)
-
     def run_task(self, job):
         """Called by Gearman"""
         func = self.task_map[job.function_name()]
@@ -95,6 +102,7 @@ class OilcanWorker(Process):
         func_log = '%s(%s)' % (func.__name__, workload)
         LOGGER.debug('Oilcan: Running task: %s', func_log)
 
+        ret = None
         try:
             ret = func(workload)
         except Exception:       # pylint: disable-msg=W0703
@@ -163,7 +171,7 @@ class OilcanManager(object):
 
         LOGGER.debug('Oilcan: DEBUG ON')
 
-    def parse_args(self):
+    def parse_args(self, args):
         """Parses the command line arguments, returns a Namespace,
         which looks like an object with properties:
         task_module, servers, procs, debug
@@ -192,12 +200,15 @@ class OilcanManager(object):
         parser.add_argument('--debug', action='store_true', default=False,
                 help='Output debug info to console')
 
-        return parser.parse_args()
+        if len(args) <= 1:
+            parser.error('Missing task_module argument')
+
+        return parser.parse_args(args)
 
     def main(self):
         """Called from command line as script, starts workers"""
 
-        args = self.parse_args()
+        args = self.parse_args(sys.argv[1:])
 
         self.task_module = args.task_module
         self.num_processes = args.procs
@@ -214,6 +225,11 @@ class OilcanManager(object):
             LOGGER.debug('Oilcan: Python path is now: %s', sys.path)
         
         self.start_workers()
+
+
+def system_import(module_name):
+    """Wrapper around __import__ built-in to help with testing"""
+    __import__(module_name)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,13 @@
 #!/usr/bin/python
 """Unit tests for Oilcan.
+
+Requires:
+    - Nose: 'python-nose' in Ubuntu, or 'nose' in PyPI.
+    - Coverage: 'python-coverage' in Ubuntu, or 'coverage' in PyPI.
+
+Run like this:
+    nosetests --with-coverage --cover-package=oilcan tests.py
+
 """
 
 # pylint: disable-msg=R0201

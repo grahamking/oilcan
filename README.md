@@ -95,6 +95,17 @@ If `do` or `do_background` return a response code, it's an index into a gearman_
 
         sudo start oilcan
 
+## Tests ##
+
+Oilcan ships with some unit tests in the _tests_ file. To run them you need:
+
+- Nose: _python-nose_ in Ubuntu, or _nose_ in PyPI.
+- Coverage: _python-coverage_ in Ubuntu, or _coverage_ in PyPI.
+
+Run like this, from the directory that contains tests.py and oilcan.py:
+
+    nosetests --with-coverage --cover-package=oilcan tests.py
+
 ## Debug ##
 
 If there is an error in your tasks.py oilcan will die as soon as it starts. To see what's going on, run oilcan in non-forked debug mode:
